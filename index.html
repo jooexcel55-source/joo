@@ -140,7 +140,7 @@
 <!-- الشاشة 1 -->
 <div id="screen1" class="screen active">
   <input type="text" id="filter1" class="filter-input" placeholder="فلتر الاسم بأول حرف" onkeyup="filterCards('screen1')">
-
+  <h1>ــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــ</h1>
   <input type="text" id="name" placeholder="الاسم">
   <input type="file" id="imageInput" accept="image/*">
   <input type="text" id="link" placeholder="الرابط">
@@ -152,11 +152,13 @@
 <!-- الشاشة 2 -->
 <div id="screen2" class="screen">
   <input type="text" id="filter2" class="filter-input" placeholder="فلتر الاسم بأول حرف" onkeyup="filterCards('screen2')">
+    <h1>ــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــ</h1>
   <div class="cards" id="cardsContainer2"></div>
 </div>
 
 <script>
-let cardsData = [];
+// ✅ تحميل البيانات من LocalStorage عند أول تشغيل
+let cardsData = JSON.parse(localStorage.getItem('myCards')) || [];
 let editIndex = -1;
 
 function showScreen(id) {
@@ -193,6 +195,9 @@ function addOrEditCard(name, image, link) {
   } else {
     cardsData.push({ name, image, link });
   }
+
+  // ✅ حفظ البيانات في LocalStorage بعد الإضافة أو التعديل
+  localStorage.setItem('myCards', JSON.stringify(cardsData));
 
   document.getElementById('name').value = '';
   document.getElementById('link').value = '';
@@ -245,6 +250,8 @@ function renderCards() {
 function deleteCard(index) {
   if (confirm('هل تريد حذف هذا المنشور؟')) {
     cardsData.splice(index, 1);
+    // ✅ تحديث LocalStorage بعد الحذف
+    localStorage.setItem('myCards', JSON.stringify(cardsData));
     renderCards();
   }
 }
@@ -269,6 +276,7 @@ function filterCards(screen) {
   });
 }
 
+// ✅ عرض الكروت عند فتح الصفحة من LocalStorage
 renderCards();
 </script>
 
