@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>منشوراتي الأسطورية</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #0d0d0d;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  h2 {
+    text-align: center;
+    margin: 20px 0;
+    font-size: 2em;
+    text-shadow: 0 0 10px #00ffcc;
+  }
+
+  .nav-btn {
+    padding: 10px 20px;
+    margin: 5px;
+    background: #1a1a1a;
+    color: #0ff;
+    border-radius: 10px;
+    border: 2px solid #0ff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .nav-btn:hover {
+    background: #0ff;
+    color: #000;
+    transform: scale(1.1);
+  }
+
+  .screen { display: none; flex-direction: column; align-items: center; width: 100%; }
+  .active { display: flex; }
+
+  .filter-input, input {
+    padding: 10px;
+    width: 250px;
+    border-radius: 10px;
+    border: 2px solid #0ff;
+    margin: 5px;
+    background: #1a1a1a;
+    color: #fff;
+    outline: none;
+  }
+
+  .save-btn {
+    padding: 10px 15px;
+    margin: 5px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    background: green;
+    color: #fff;
+    transition: all 0.3s ease;
+  }
+  .save-btn:hover { transform: scale(1.1); box-shadow: 0 0 10px green; }
+
+  .cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 20px;
+  }
+
+  .card {
+    background: #1a1a1a;
+    padding: 15px;
+    border-radius: 15px;
+    width: 220px;
+    text-align: center;
+    box-shadow: 0 0 10px #0ff;
+    opacity: 0;
+    transform: translateY(50px) rotateX(15deg);
+    transition: all 0.5s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .card.show { opacity: 1; transform: translateY(0) rotateX(0deg); }
+
+  .card img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-bottom: 10px;
+  }
+
+  .card h3, .card p { margin: 5px 0; }
+
+  .card-buttons {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .card button {
+    flex: 1;
+    margin: 0 2px;
+    padding: 6px 0;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+  }
+
+  .delete-btn { background: red; color: #fff; }
+  .edit-btn { background: orange; color: #000; }
+  .copy-btn { background: blue; color: #fff; }
+  .open-btn { background: purple; color: #fff; }
+
+  .delete-btn:hover { box-shadow: 0 0 10px red; transform: scale(1.05); }
+  .edit-btn:hover { box-shadow: 0 0 10px orange; transform: scale(1.05); }
+  .copy-btn:hover { box-shadow: 0 0 10px blue; transform: scale(1.05); }
+  .open-btn:hover { box-shadow: 0 0 10px purple; transform: scale(1.05); }
+</style>
+</head>
+<body>
+
+<h2>منشوراتي الأسطورية</h2>
+
+<div>
+  <button class="nav-btn" onclick="showScreen('screen1')">إدارة المنشورات</button>
+  <button class="nav-btn" onclick="showScreen('screen2')">عرض المنشورات</button>
+</div>
+
+<!-- الشاشة 1 -->
+<div id="screen1" class="screen active">
+  <input type="text" id="filter1" class="filter-input" placeholder="فلتر الاسم بأول حرف" onkeyup="filterCards('screen1')">
+
+  <input type="text" id="name" placeholder="الاسم">
+  <input type="file" id="imageInput" accept="image/*">
+  <input type="text" id="link" placeholder="الرابط">
+  <button class="save-btn" onclick="saveCard()">حفظ</button>
+
+  <div class="cards" id="cardsContainer1"></div>
+</div>
+
+<!-- الشاشة 2 -->
+<div id="screen2" class="screen">
+  <input type="text" id="filter2" class="filter-input" placeholder="فلتر الاسم بأول حرف" onkeyup="filterCards('screen2')">
+  <div class="cards" id="cardsContainer2"></div>
+</div>
+
+<script>
+let cardsData = [];
+let editIndex = -1;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  renderCards();
+}
+
+function saveCard() {
+  const name = document.getElementById('name').value.trim();
+  const link = document.getElementById('link').value.trim();
+  const fileInput = document.getElementById('imageInput');
+
+  if (!name || !link || (!fileInput.files[0] && editIndex < 0)) {
+    return alert('اكمل كل الحقول');
+  }
+
+  if (fileInput.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const imageData = e.target.result;
+      addOrEditCard(name, imageData, link);
+    }
+    reader.readAsDataURL(fileInput.files[0]);
+  } else {
+    addOrEditCard(name, cardsData[editIndex].image, link);
+  }
+}
+
+function addOrEditCard(name, image, link) {
+  if (editIndex >= 0) {
+    cardsData[editIndex] = { name, image, link };
+    editIndex = -1;
+  } else {
+    cardsData.push({ name, image, link });
+  }
+
+  document.getElementById('name').value = '';
+  document.getElementById('link').value = '';
+  document.getElementById('imageInput').value = '';
+  renderCards();
+}
+
+function renderCards() {
+  const container1 = document.getElementById('cardsContainer1');
+  const container2 = document.getElementById('cardsContainer2');
+  container1.innerHTML = '';
+  container2.innerHTML = '';
+
+  cardsData.forEach((card, index) => {
+    // شاشة 1
+    const card1 = document.createElement('div');
+    card1.className = 'card';
+    card1.innerHTML = `
+      <img src="${card.image}" alt="صورة">
+      <h3>${card.name}</h3>
+      <p>${card.link}</p>
+      <div class="card-buttons">
+        <button class="delete-btn" onclick="deleteCard(${index})">حذف</button>
+        <button class="edit-btn" onclick="editCard(${index})">تعديل</button>
+      </div>
+    `;
+    container1.appendChild(card1);
+    setTimeout(() => card1.classList.add('show'), 50);
+
+    // شاشة 2
+    const card2 = document.createElement('div');
+    card2.className = 'card';
+    card2.innerHTML = `
+      <img src="${card.image}" alt="صورة">
+      <h3>${card.name}</h3>
+      <p>${card.link}</p>
+      <div class="card-buttons">
+        <button class="copy-btn" onclick="copyLink('${card.link}')">نسخ الرابط</button>
+        <button class="open-btn" onclick="window.open('${card.link}','_blank')">فتح الرابط</button>
+      </div>
+    `;
+    container2.appendChild(card2);
+    setTimeout(() => card2.classList.add('show'), 50);
+  });
+
+  filterCards('screen1');
+  filterCards('screen2');
+}
+
+function deleteCard(index) {
+  if (confirm('هل تريد حذف هذا المنشور؟')) {
+    cardsData.splice(index, 1);
+    renderCards();
+  }
+}
+
+function editCard(index) {
+  document.getElementById('name').value = cardsData[index].name;
+  document.getElementById('link').value = cardsData[index].link;
+  editIndex = index;
+}
+
+function copyLink(link) {
+  navigator.clipboard.writeText(link);
+  alert('تم نسخ الرابط');
+}
+
+function filterCards(screen) {
+  const filterInput = document.getElementById(screen==='screen1'?'filter1':'filter2').value.toLowerCase();
+  const container = document.getElementById(screen==='screen1'?'cardsContainer1':'cardsContainer2');
+  Array.from(container.children).forEach(card => {
+    const name = card.querySelector('h3').textContent.toLowerCase();
+    card.style.display = name.startsWith(filterInput) ? 'flex' : 'none';
+  });
+}
+
+renderCards();
+</script>
+
+</body>
+</html>
